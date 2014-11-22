@@ -8,50 +8,60 @@ import java.util.concurrent.CountDownLatch;
 import javax.xml.namespace.QName;
 import javax.xml.ws.Service;
 
-import org.apache.commons.pool2.ObjectPool;
-import org.apache.commons.pool2.impl.GenericObjectPool;
-
-import org.jboss.logging.Logger;
-import java.util.List;
-import javax.xml.ws.handler.Handler;
+import java.math.BigInteger;
+import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+
 import javax.xml.ws.BindingProvider;
-import javax.xml.ws.handler.soap.SOAPHandler;
-import javax.xml.ws.handler.PortInfo;
+import javax.xml.ws.handler.Handler;
 import javax.xml.ws.handler.HandlerResolver;
+import javax.xml.ws.handler.PortInfo;
+import javax.xml.ws.handler.soap.SOAPHandler;
 import javax.xml.ws.spi.Provider;
 
+import org.apache.commons.pool2.ObjectPool;
+import org.apache.commons.pool2.impl.GenericObjectPool;
+import org.jboss.logging.Logger;
+import javax.activation.DataHandler;
+import javax.activation.URLDataSource;
+import java.io.InputStream;
+import javax.xml.ws.soap.SOAPBinding;
+
 public class Test {
-  private static ObjectPool<WrapperHack<Hello>> pool = null;
-  private final List<Handler> handlerChain = Collections.singletonList((Handler)new SimpleLoggingHandler());
+  private static ObjectPool<WrapperHack<HashServer>> pool = null;
 
   private static final Logger log = Logger.getLogger(Test.class);
+  private static final URL FILE = Test.class.getResource("/shadowman.jpg");
+  private static String FILE_HASH = "";
+
+  static {
+    try {
+      FILE_HASH = calcHash(FILE);
+    } catch(Exception e) {
+      log.error("Local hash can't be calculated!", e);
+    }
+  }
 
   public void init() {
     log.warn("Provider class:       " + Provider.provider().getClass().getName());
     log.warn("Provider classloader: " + Provider.provider().getClass().getClassLoader());
     if (pool == null) {
-      final QName ns = new QName("http://ws.gss.redhat.com/", "HelloImplService");
-      URL wsdl = null;
+      final QName ns = new QName("http://ws.gss.redhat.com/", "HashServerImplService");
       String host = System.getProperty("gss.endpoint.host", "localhost:8080");
+      URL wsdl = null;
+
       try {
         wsdl = new URL("http://" + host + "/hello/hello?wsdl");
       } catch(MalformedURLException mue) {
       }
       final Service service = Service.create(wsdl, ns);
-      service.setHandlerResolver(new HandlerResolver() {
-        public List<Handler> getHandlerChain(PortInfo info) {
-          log.warn("Retrieving custom handler chain");
-          return handlerChain;
-        }
-      });
-      pool = new GenericObjectPool<WrapperHack<Hello>>(new JaxWsClientPoolFactory(service));
+      pool = new GenericObjectPool<WrapperHack<HashServer>>(new JaxWsClientPoolFactory(service));
     }
   }
 
   public static void main(String[] args) throws Exception {
-    // org.apache.log4j.BasicConfigurator.configure();
     Test t = new Test();
     t.init();
     t.test();
@@ -84,16 +94,17 @@ public class Test {
     }
 
     public void run() {
-      WrapperHack<Hello> wrapper = null;
+      WrapperHack<HashServer> wrapper = null;
       
       try {
         wrapper = pool.borrowObject();
-        Hello port = wrapper.getItem();
+        HashServer port = wrapper.getItem();
+        SOAPBinding binding = (SOAPBinding)((BindingProvider)port).getBinding();
+        binding.setMTOMEnabled(true);
 
         long start = 0, end = 0;
         long[] times = new long[1000];
         for(int i=0 ;i < count; i++) {
-          ((BindingProvider)port).getBinding().setHandlerChain(handlerChain);
           if((i % 1000) == 0) {
             long avg = 0L;
             for(int j=0; j<1000; j++) {
@@ -105,13 +116,22 @@ public class Test {
           if(log.isTraceEnabled()) {
             log.trace("Run: " + i);
           }
+          DataHandler dh = new DataHandler(new URLDataSource(FILE));
+          ContentDataType data = new ContentDataType();
+          data.setContentData(dh);
+
           start = System.nanoTime();
-          port.hello("Kyle");
+          String hash = port.calcHash(data);
           end = System.nanoTime();
+
           long elapsed = (end-start)/1000000;
           times[i % 1000] = elapsed;
           if(log.isTraceEnabled()) {
             log.tracef("Elapsed time: %dms", elapsed);
+          }
+
+          if(!FILE_HASH.equals(hash)) {
+            log.warn("Hash not equal!");
           }
         }
       }
@@ -129,5 +149,21 @@ public class Test {
         log.debug("Thread complete.  Current latch count: " + finishLatch.getCount());
       }
     }
+  }
+
+  private static String calcHash(URL url) throws Exception {
+    InputStream input = url.openStream();
+    MessageDigest digest = MessageDigest.getInstance("MD5");
+    byte[] bb = new byte[1024];
+    int length = 0;
+    while((length = input.read(bb)) > 0) {
+      digest.update(bb, 0, length);
+    }
+    return toHexString(digest.digest());
+  }
+
+  private static String toHexString(byte[] hash) {
+    BigInteger bi = new BigInteger(1, hash);
+    return String.format("%0" + (hash.length << 1) + "x", bi);
   }
 }

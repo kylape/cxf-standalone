@@ -14,6 +14,6 @@ public class MyCXFServlet extends CXFNonSpringServlet {
     super.loadBus(servletConfig);        
      
     BusFactory.setDefaultBus(bus); 
-    Endpoint.publish("/hello", new HelloImpl());
+    Endpoint.publish("/hello", new HashServerImpl());
   }
 }
