@@ -16,11 +16,17 @@ import javax.xml.ws.handler.MessageContext;
 import org.apache.cxf.message.Message;
 import org.apache.cxf.jaxws.context.WrappedMessageContext;
 import java.util.Collection;
+import org.apache.cxf.io.Transferable;
+import java.io.File;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.io.FileInputStream;
 
 @MTOM
 @WebService(endpointInterface="com.redhat.gss.ws.HashServer")
 public class HashServerImpl implements HashServer {
-  private static Logger log = Logger.getLogger(HashServer.class);
+  private static final String ATTACHMENT_PATH = "/home/remote/klape/work/dev/maven-projects/cxf-standalone/attachments";
+  private static final Logger log = Logger.getLogger(HashServer.class);
+  private static final AtomicInteger counter = new AtomicInteger();
 
   @Resource
   WebServiceContext ctx;
@@ -37,6 +43,14 @@ public class HashServerImpl implements HashServer {
 
       DataHandler dh = data.getContentData();
       InputStream input = dh.getInputStream();
+      if(input instanceof Transferable) {
+        Transferable t = (Transferable)input;
+        String filename = ATTACHMENT_PATH + File.separator + counter.incrementAndGet();
+        log.info(filename);
+        File f = new File(filename);
+        t.transferTo(f);
+        input = new FileInputStream(f);
+      }
 
       MessageDigest digest = MessageDigest.getInstance("MD5");
       byte[] bb = new byte[2048];
