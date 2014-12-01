@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope">
+  <env:Header/>
+  <env:Body>
+    <ns2:hello xmlns:ns2="http://ws.gss.redhat.com/">
+      <arg0>Jack</arg0>
+    </ns2:hello>
+  </env:Body>
+</env:Envelope>

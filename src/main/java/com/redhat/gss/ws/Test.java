@@ -106,7 +106,7 @@ public class Test {
             log.trace("Run: " + i);
           }
           start = System.nanoTime();
-          port.hello("Kyle");
+          port.hello("Jack");
           end = System.nanoTime();
           long elapsed = (end-start)/1000000;
           times[i % 1000] = elapsed;

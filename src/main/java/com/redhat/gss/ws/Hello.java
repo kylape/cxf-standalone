@@ -2,5 +2,5 @@ package com.redhat.gss.ws;
 
 @javax.jws.WebService
 public interface Hello {
-  public String hello(String name);
+  public String hello(String name) throws HDWSFault;
 }
