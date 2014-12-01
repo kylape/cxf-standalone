@@ -10,6 +10,7 @@ import javax.xml.soap.SOAPFault;
 import javax.xml.soap.SOAPException;
 import javax.xml.ws.BindingType;
 import javax.xml.ws.soap.SOAPBinding;
+import javax.xml.ws.soap.SOAPFaultException;
 
 @WebService
 @BindingType(value=SOAPBinding.SOAP12HTTP_BINDING)
@@ -27,7 +28,8 @@ public class HelloImpl {
         SOAPFactory factory = SOAPFactory.newInstance(SOAPConstants.SOAP_1_2_PROTOCOL);
         SOAPFault soapFault = factory.createFault("Error accepting name", new QName(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Sender"));
         soapFault.appendFaultSubcode(new QName("urn:nzl:govt:ict:stds:authn:deployment:igovt:gls:hdws:1_0", "dislikedName"));
-        throw new HDWSFault(soapFault, fault);
+        SOAPFaultException sfe = new SOAPFaultException(soapFault);
+        throw new HDWSFault("The reason of the fault", sfe, fault);
       } catch(SOAPException e) {
         throw new RuntimeException("Bad name");
       }

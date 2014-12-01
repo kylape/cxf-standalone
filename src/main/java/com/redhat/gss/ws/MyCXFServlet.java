@@ -13,7 +13,7 @@ public class MyCXFServlet extends CXFNonSpringServlet {
   protected void loadBus(ServletConfig servletConfig) {
     super.loadBus(servletConfig);        
      
-    BusFactory.setDefaultBus(bus); 
+    BusFactory.setDefaultBus(getBus()); 
     Endpoint.publish("/hello", new HelloImpl());
   }
 }
