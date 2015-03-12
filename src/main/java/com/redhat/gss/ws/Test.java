@@ -86,7 +86,7 @@ public class Test {
               avg += times[j];
             }
             avg = avg/1000;
-            log.debugf("%d: %dms", i, avg);
+            log.debug("" + i + ": " + avg + "ms");
           }
           if(log.isTraceEnabled()) {
             log.trace("Run: " + i);
