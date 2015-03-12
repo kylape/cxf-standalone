@@ -13,19 +13,13 @@ import org.apache.commons.pool2.impl.GenericObjectPool;
 
 import org.jboss.logging.Logger;
 import java.util.List;
-import javax.xml.ws.handler.Handler;
 import java.util.Arrays;
 import java.util.Collections;
 import javax.xml.ws.BindingProvider;
-import javax.xml.ws.handler.soap.SOAPHandler;
-import javax.xml.ws.handler.PortInfo;
-import javax.xml.ws.handler.HandlerResolver;
 import javax.xml.ws.spi.Provider;
 
 public class Test {
   private static ObjectPool<WrapperHack<Hello>> pool = null;
-  private final List<Handler> handlerChain = Collections.singletonList((Handler)new SimpleLoggingHandler());
-
   private static final Logger log = Logger.getLogger(Test.class);
 
   public void init() {
@@ -40,18 +34,11 @@ public class Test {
       } catch(MalformedURLException mue) {
       }
       final Service service = Service.create(wsdl, ns);
-      service.setHandlerResolver(new HandlerResolver() {
-        public List<Handler> getHandlerChain(PortInfo info) {
-          log.warn("Retrieving custom handler chain");
-          return handlerChain;
-        }
-      });
       pool = new GenericObjectPool<WrapperHack<Hello>>(new JaxWsClientPoolFactory(service));
     }
   }
 
   public static void main(String[] args) throws Exception {
-    // org.apache.log4j.BasicConfigurator.configure();
     Test t = new Test();
     t.init();
     t.test();
@@ -93,7 +80,6 @@ public class Test {
         long start = 0, end = 0;
         long[] times = new long[1000];
         for(int i=0 ;i < count; i++) {
-          ((BindingProvider)port).getBinding().setHandlerChain(handlerChain);
           if((i % 1000) == 0) {
             long avg = 0L;
             for(int j=0; j<1000; j++) {
