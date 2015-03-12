@@ -24,8 +24,14 @@ public class Test {
   private static final Logger log = Logger.getLogger(Test.class);
 
   public void init() {
-    log.warn("Provider class:       " + Provider.provider().getClass().getName());
-    log.warn("Provider classloader: " + Provider.provider().getClass().getClassLoader());
+    try {
+      log.warn("Provider class:       " + Provider.provider().getClass().getName());
+      log.warn("Provider classloader: " + Provider.provider().getClass().getClassLoader());
+      log.warn("SAAJ Facotry impl:    " + javax.xml.soap.MessageFactory.newInstance());
+      log.warn("SAAJ Facotry impl CL: " + javax.xml.soap.MessageFactory.newInstance().getClass().getClassLoader());
+    } catch(Exception e) {
+      //ignore I guess
+    }
     if (pool == null) {
       final QName ns = new QName("http://ws.gss.redhat.com/", "HelloImplService");
       URL wsdl = null;
