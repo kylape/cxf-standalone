@@ -10,6 +10,7 @@ import javax.xml.ws.Service;
 
 import org.apache.commons.pool2.ObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPool;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
 import org.jboss.logging.Logger;
 import java.util.List;
@@ -34,7 +35,9 @@ public class Test {
       } catch(MalformedURLException mue) {
       }
       final Service service = Service.create(wsdl, ns);
-      pool = new GenericObjectPool<WrapperHack<Hello>>(new JaxWsClientPoolFactory(service));
+      GenericObjectPoolConfig config = new GenericObjectPoolConfig();
+      config.setJmxEnabled(false);
+      pool = new GenericObjectPool<WrapperHack<Hello>>(new JaxWsClientPoolFactory(service), config);
     }
   }
 
